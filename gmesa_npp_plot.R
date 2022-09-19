@@ -2,6 +2,8 @@
 # sept 19th, 2022
 
 library(terra)
+library(dplyr)
+library(tidyr)
 library(ggplot2):theme_set(theme_void(12))
 
 setwd("/Users/jacktarricone/g_mesa/data/")
@@ -25,15 +27,31 @@ hp_unw <-crop(unw_stack, hp_ext)
 plot(hp_unw)
 
 # convert to df for ggplot
-unw_df <-as.data.frame(unw_stack, xy = TRUE)
+unw_df <-as.data.frame(hp_unw, xy = TRUE)
+
+# change col names
+colnames(unw_df)[3:8] <-c("p1","p2","p3","p4","p5","p6")
 head(unw_df)
 
+# reformat for plotting
+plotting_df <- pivot_longer(unw_df, 3:8)
+colnames(plotting_df)[4] <-'unw'
+
 # test plot
-ggplot(unw_df) +
-  geom_tile(aes(x,y, fill = 'grmesa_27416_21019-017_21021-005_0006d_s01_L090VV_01.unw.grd')) +
+ggplot(plotting_df) +
+  geom_raster(aes(x,y)) +
   labs(x="Latitude (deg)",
        y="Longitude (deg)",
-       title = "phase")
+       title = "phase")+
+  facet_grid(. ~ name) +
+  theme_bw() +
+  coord_equal() +
+  scale_fill_gradient('UNW (rad)', limits=c(-1,4)) 
+
+
+
+
+
 
 
 
