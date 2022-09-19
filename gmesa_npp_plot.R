@@ -9,6 +9,7 @@ library(ggplot2):theme_set(theme_void(12))
 setwd("/Users/jacktarricone/g_mesa/data/")
 dir_list <-list.files(pattern = '_grd')
 unw_list <-list.files(dir_list, pattern = 'unw.grd.tiff', full.names = TRUE)
+unw_names <-list.files(dir_list, pattern = 'unw.grd.tiff', full.names = FALSE)
 unw_list # list tiff files
 
 # read in as rast list
@@ -30,23 +31,82 @@ plot(hp_unw)
 unw_df <-as.data.frame(hp_unw, xy = TRUE)
 
 # change col names
-colnames(unw_df)[3:8] <-c("p1","p2","p3","p4","p5","p6")
+colnames(unw_df)[3:8] <-c("1/27-2/03",
+                          "2/03-2/10",
+                          "2/10-3/03",
+                          "3/03-3/10",
+                          "3/10-3/16",
+                          "")
 head(unw_df)
 
+# date info for renaming
+
+# p1
+# "startTime": "2021-01-27T19:47:02Z"
+# "stopTime": "2021-02-03T23:50:19Z"
+
+# p2
+# "startTime": "2021-02-03T23:50:36Z"
+# "stopTime": "2021-02-10T19:12:27Z"
+
+# p3
+# "startTime": "2021-02-10T19:12:13Z"
+# "stopTime": "2021-03-03T22:03:01Z"
+
+# p4
+# "startTime": "2021-03-03T22:03:00Z"
+# "stopTime": "2021-03-10T16:36:09Z"
+
+# p5
+# "startTime": "2021-03-10T16:36:24Z"
+# "stopTime": "2021-03-16T16:39:43Z"
+
+# p6
+# "startTime": "2021-03-16T16:39:43Z"
+# "stopTime": "2021-03-22T15:30:53Z"
+
+# normalize so just phase variation
+normalit<-function(m){
+  if(mean(m) > 0)
+  (m - mean(m))
+  else(
+    m + abs(mean(m))
+  )
+}
+
+# test
+scaled <-normalit(unw_df$p6)
+hist(scaled)
+
+# mutate
+unw_norm <-unw_df %>%
+            mutate(p1_norm = normalit(p1), 
+                   p2_norm = normalit(p2),
+                   p3_norm = normalit(p3),
+                   p4_norm = normalit(p4),
+                   p5_norm = normalit(p5),
+                   p6_norm = normalit(p6))
+
+# add lat long back on
+unw_norm <-cbind(unw_df$x, unw_df$y, unw_norm[,9:14])
+colnames(unw_norm)[1:2] <-c('x','y')
+head(unw_norm)
+
 # reformat for plotting
-plotting_df <- pivot_longer(unw_df, 3:8)
+plotting_df <- pivot_longer(unw_norm, 3:8)
 colnames(plotting_df)[4] <-'unw'
 
 # test plot
 ggplot(plotting_df) +
-  geom_raster(aes(x,y)) +
+  geom_raster(aes(x,y, fill = as.numeric(unw))) +
   labs(x="Latitude (deg)",
        y="Longitude (deg)",
        title = "phase")+
-  facet_grid(. ~ name) +
-  theme_bw() +
+  facet_wrap(~ name, ncol = 3) +
+  theme_light() +
   coord_equal() +
-  scale_fill_gradient('UNW (rad)', limits=c(-1,4)) 
+  labs(fill = "unw", title = "Grand Mesa Unwrapped Phase 2021 UAVSAR Time Series") +
+  scale_fill_gradient('UNW (rad)', limits = c(-2,2)) 
 
 
 
