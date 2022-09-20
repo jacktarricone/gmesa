@@ -4,7 +4,7 @@
 library(terra)
 library(dplyr)
 library(tidyr)
-library(ggplot2):theme_set(theme_void(12))
+library(ggplot2):theme_set(theme_classic(12))
 
 setwd("/Users/jacktarricone/g_mesa/data/")
 dir_list <-list.files(pattern = '_grd')
@@ -70,7 +70,7 @@ normalit <-function(m){
 }
 
 # test
-scaled <-normalit(unw_df$'3/03-3/10 raw')
+scaled <-normalit(unw_df$p6)
 hist(scaled)
 
 # mutate
@@ -85,14 +85,14 @@ unw_norm <-unw_df %>%
 
 # add lat long back on
 unw_norm <-cbind(unw_df$x, unw_df$y, unw_norm[,9:14])
-colnames(unw_norm)[1:2] <-c('x','y')
-colnames(unw_norm)[3:8] <-c("1/27-2/03",
-                          "2/03-2/10",
-                          "2/10-3/03",
-                          "3/03-3/10",
-                          "3/10-3/16",
-                          "3/16-3/22")
-head(unw_norm)
+colnames(unw_norm)[1:8] <-c("x","y",
+                            "1/27-2/03",
+                            "2/03-2/10",
+                            "2/10-3/03",
+                            "3/03-3/10",
+                            "3/10-3/16",
+                            "3/16-3/22")
+head(unw_norm) # check
 
 # reformat for plotting
 plotting_df <- pivot_longer(unw_norm, 3:8)
@@ -105,15 +105,14 @@ ggplot(plotting_df) +
        y="Longitude (deg)",
        title = "phase")+
   facet_wrap(~ name, ncol = 3) +
-  theme_light() +
   coord_equal() +
-  labs(fill = "unw", title = "Grand Mesa Unwrapped Phase 2021 UAVSAR Time Series") +
+  labs(fill = "unw") + #, title = "Grand Mesa Unwrapped Phase 2021 UAVSAR Time Series") +
   scale_fill_gradientn('UNW (rad)', limits = c(-3,3),
-                      colours = colorRampPalette(c("darkred", "white", "darkblue"))(20)) 
+                      colours = colorRampPalette(c("darkred", "white", "darkblue"))(20)) +
+  theme(strip.background = element_rect(colour="white", fill="white"))
 
 
-setwd("/Volumes/JT/projects/uavsar/gmesa/")
-ggsave(file = "gmesa_unw_ts_2021.png",
-       width = 10, 
-       height = 5,
+ggsave(file = "gmesa_unw_ts_2021_v2.png",
+       width = 12, 
+       height = 6,
        dpi = 400)
